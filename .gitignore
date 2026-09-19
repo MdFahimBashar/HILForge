@@ -1,0 +1,57 @@
+# Python bytecode and build output
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+build/
+dist/
+.cache/
+
+# Environments and local configuration
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+.envrc
+.direnv/
+secrets/
+.secrets/
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Test, lint, type-check, and coverage state
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.tox/
+.nox/
+.pyright/
+coverage.xml
+
+# Local runtime state
+*.db
+*.sqlite
+*.sqlite3
+*.log
+celerybeat-schedule*
+tmp/
+temp/
+scratch/
+debug/
+
+# Editors and operating systems
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini

@@ -1,0 +1,7 @@
+{% macro status_badge(status, prominent=false) -%}
+<span class="status-badge status-{{ status.value }}{% if prominent %} status-prominent{% endif %}"><i aria-hidden="true"></i>{{ status.value|replace('_', ' ')|title }}</span>
+{%- endmacro %}
+
+{% macro relative_time(value) -%}
+{% if value %}<time datetime="{{ value.isoformat() }}" data-relative-time title="{{ value.strftime('%Y-%m-%d %H:%M:%S UTC') }}">{{ value.strftime('%b %d, %H:%M') }}</time>{% else %}<span class="never-time">Never</span>{% endif %}
+{%- endmacro %}

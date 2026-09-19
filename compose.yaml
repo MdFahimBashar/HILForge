@@ -1,0 +1,166 @@
+name: hilforge
+
+x-app-environment: &app-environment
+  HILFORGE_ENVIRONMENT: ${HILFORGE_ENVIRONMENT:-development}
+  HILFORGE_LOG_LEVEL: ${HILFORGE_LOG_LEVEL:-INFO}
+  HILFORGE_DATABASE_URL: ${HILFORGE_DATABASE_URL:-postgresql+psycopg://hilforge:hilforge@postgres:5432/hilforge}
+  HILFORGE_REDIS_URL: ${HILFORGE_REDIS_URL:-redis://redis:6379/0}
+  HILFORGE_JOB_TIMEOUT_SECONDS: ${HILFORGE_JOB_TIMEOUT_SECONDS:-3}
+  HILFORGE_JOB_MAX_ATTEMPTS: ${HILFORGE_JOB_MAX_ATTEMPTS:-3}
+  HILFORGE_RETRY_BACKOFF_SECONDS: ${HILFORGE_RETRY_BACKOFF_SECONDS:-1}
+  HILFORGE_RETRY_BACKOFF_MAX_SECONDS: ${HILFORGE_RETRY_BACKOFF_MAX_SECONDS:-10}
+  HILFORGE_JOB_LEASE_GRACE_SECONDS: ${HILFORGE_JOB_LEASE_GRACE_SECONDS:-5}
+  HILFORGE_HEARTBEAT_TIMEOUT_SECONDS: ${HILFORGE_HEARTBEAT_TIMEOUT_SECONDS:-10}
+  HILFORGE_HEARTBEAT_SCAN_INTERVAL_SECONDS: ${HILFORGE_HEARTBEAT_SCAN_INTERVAL_SECONDS:-3}
+  HILFORGE_RECONCILE_INTERVAL_SECONDS: ${HILFORGE_RECONCILE_INTERVAL_SECONDS:-2}
+
+x-app: &app
+  image: hilforge:${HILFORGE_IMAGE_TAG:-local}
+  build:
+    context: .
+    target: runtime
+  environment:
+    <<: *app-environment
+  init: true
+  restart: unless-stopped
+
+x-agent: &agent
+  <<: *app
+  command: ["uvicorn", "hilforge.agent.app:app", "--host", "0.0.0.0", "--port", "9000"]
+  depends_on:
+    api:
+      condition: service_healthy
+  healthcheck:
+    test:
+      - CMD
+      - python
+      - -c
+      - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9000/health', timeout=3).read()"
+    interval: 5s
+    timeout: 4s
+    retries: 20
+    start_period: 5s
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-hilforge}
+      POSTGRES_USER: ${POSTGRES_USER:-hilforge}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hilforge}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 3s
+    restart: unless-stopped
+
+  migrate:
+    <<: *app
+    command: ["sh", "-c", "alembic upgrade head && python -m hilforge.db.seed"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    <<: *app
+    command: ["uvicorn", "hilforge.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "127.0.0.1:${HILFORGE_API_PORT:-8000}:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3).read()"
+      interval: 5s
+      timeout: 4s
+      retries: 20
+      start_period: 5s
+
+  worker:
+    <<: *app
+    command:
+      - celery
+      - -A
+      - hilforge.tasks.celery_app:celery_app
+      - worker
+      - --loglevel=INFO
+      - --concurrency=4
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  beat:
+    <<: *app
+    command:
+      - celery
+      - -A
+      - hilforge.tasks.celery_app:celery_app
+      - beat
+      - --loglevel=INFO
+      - --schedule=/tmp/celerybeat-schedule
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  agent-healthy:
+    <<: *agent
+    environment:
+      <<: *app-environment
+      HILFORGE_AGENT_NAME: sim-healthy
+      HILFORGE_AGENT_MODE: healthy
+      HILFORGE_AGENT_PUBLIC_URL: http://agent-healthy:9000
+      HILFORGE_AGENT_SERVER_URL: http://api:8000
+      HILFORGE_AGENT_EXECUTION_SECONDS: 0.4
+
+  agent-slow:
+    <<: *agent
+    environment:
+      <<: *app-environment
+      HILFORGE_AGENT_NAME: sim-slow
+      HILFORGE_AGENT_MODE: slow
+      HILFORGE_AGENT_PUBLIC_URL: http://agent-slow:9000
+      HILFORGE_AGENT_SERVER_URL: http://api:8000
+      HILFORGE_AGENT_EXECUTION_SECONDS: 20
+
+  agent-unreliable:
+    <<: *agent
+    environment:
+      <<: *app-environment
+      HILFORGE_AGENT_NAME: sim-unreliable
+      HILFORGE_AGENT_MODE: unreliable
+      HILFORGE_AGENT_PUBLIC_URL: http://agent-unreliable:9000
+      HILFORGE_AGENT_SERVER_URL: http://api:8000
+      HILFORGE_AGENT_EXECUTION_SECONDS: 0.4
+      HILFORGE_AGENT_OUTCOME_SCRIPT: transient,pass
+
+volumes:
+  postgres-data:
+  redis-data:

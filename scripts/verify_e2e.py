@@ -35,7 +35,7 @@ def wait_for_devices(base_url: str, timeout: float) -> list[dict[str, Any]]:
             names = {device["name"] for device in devices if device["status"] == "online"}
             if {"sim-healthy", "sim-slow", "sim-unreliable"} <= names:
                 return devices
-        except OSError, urllib.error.HTTPError:
+        except (OSError, urllib.error.HTTPError):  # fmt: skip
             pass
         time.sleep(1)
     raise RuntimeError("Three online simulated devices did not register before the deadline")

@@ -5,9 +5,9 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context
-from hilforge import models  # noqa: F401
-from hilforge.core.config import get_settings
-from hilforge.db.base import Base
+from pulsehunter import models  # noqa: F401
+from pulsehunter.core.config import get_settings
+from pulsehunter.db.base import Base
 
 config = context.config
 

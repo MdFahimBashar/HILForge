@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, relative_time %}
+{% block title %}Run {{ run.id|string|truncate(13, True, '') }} · PulseHunter{% endblock %}
+{% block body_class %}run-view{% endblock %}
+{% block content %}
+{% set negative_count = run.counts.failed + run.counts.timed_out %}
+{% set is_active = run.status.value in ['queued', 'running'] %}
+<section class="run-detail-page" {% if is_active %}data-auto-refresh="3000"{% endif %}>
+  <nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">Dashboard</a><span>›</span><span>Validation run</span></nav>
+
+  <header class="run-hero">
+    <div class="run-heading">
+      <div class="run-heading-top">{{ status_badge(run.status, true) }}{% if is_active %}<span class="live-refresh"><i></i>Live · refreshing</span>{% endif %}</div>
+      <p class="eyebrow">{{ run.test_suite_name }}</p>
+      <h1>Validation run</h1>
+      <div class="run-meta"><code>{{ run.id }}</code><span>Created {{ relative_time(run.created_at) }}</span></div>
+    </div>
+    <div class="run-completion"><span class="completion-label">Completion</span><strong>{{ run.counts.passed + negative_count }}<small>/{{ run.counts.total }}</small></strong><span>jobs terminal</span></div>
+  </header>
+
+  <div class="run-progress" aria-label="Run progress">
+    <div class="run-progress-track">
+      {% if run.counts.passed %}<i class="progress-passed" style="--weight:{{ run.counts.passed }}"></i>{% endif %}
+      {% if negative_count %}<i class="progress-negative" style="--weight:{{ negative_count }}"></i>{% endif %}
+      {% if active_count %}<i class="progress-active" style="--weight:{{ active_count }}"></i>{% endif %}
+    </div>
+    <div class="progress-legend"><span><i class="legend-passed"></i>{{ run.counts.passed }} passed</span><span><i class="legend-negative"></i>{{ negative_count }} failed</span>{% if active_count %}<span><i class="legend-active"></i>{{ active_count }} active</span>{% endif %}</div>
+  </div>
+
+  <section class="run-metrics" aria-label="Run metrics">
+    <article><span>Total jobs</span><strong>{{ run.counts.total }}</strong></article>
+    <article class="metric-success"><span>Passed</span><strong>{{ run.counts.passed }}</strong></article>
+    <article class="metric-danger"><span>Failed</span><strong>{{ run.counts.failed }}</strong></article>
+    <article class="metric-warning"><span>Retries</span><strong>{{ retry_count }}</strong></article>
+    <article class="metric-timeout"><span>Timeouts</span><strong>{{ run.counts.timed_out }}</strong></article>
+  </section>
+
+  <section class="jobs-section" aria-labelledby="jobs-title">
+    <div class="section-heading jobs-heading">
+      <div><p class="eyebrow">Device execution</p><h2 id="jobs-title">Job results</h2></div>
+      {% if run.completed_at %}<span class="section-caption">Completed {{ relative_time(run.completed_at) }}</span>{% elif run.started_at %}<span class="section-caption">Started {{ relative_time(run.started_at) }}</span>{% endif %}
+    </div>
+    <div class="job-list">
+      {% for job in jobs %}
+      <article class="job-item job-{{ job.status.value }}">
+        <div class="job-summary">
+          <div class="job-device"><span class="job-device-icon" aria-hidden="true"></span><div><strong>{{ job.device_name }}</strong><code>{{ job.device_id|string|truncate(13, True, '') }}</code></div></div>
+          <div class="job-status">{{ status_badge(job.status) }}</div>
+          <div class="job-stat"><span>Attempts</span><strong>{{ job.attempts }}</strong>{% if job.attempts > 1 %}<small>{{ job.attempts - 1 }} {{ 'retry' if job.attempts == 2 else 'retries' }}</small>{% endif %}</div>
+          <div class="job-stat"><span>Duration</span><strong>{% if job.execution_duration is not none %}{{ '%.2f'|format(job.execution_duration) }}s{% else %}—{% endif %}</strong></div>
+          <div class="job-outcome">
+            {% if job.error_message %}<span class="error-summary"><i aria-hidden="true">!</i>{{ job.error_message }}</span>
+            {% elif job.result and job.result.get('checks_total') is not none %}<span class="check-summary"><i aria-hidden="true">✓</i><strong>{{ job.result.get('checks_passed', 0) }}/{{ job.result.get('checks_total') }}</strong> checks passed</span>
+            {% elif job.status.value in ['queued', 'running', 'retrying'] %}<span class="pending-summary"><i></i>Awaiting result</span>
+            {% else %}<span class="muted-summary">No result payload</span>{% endif %}
+          </div>
+        </div>
+        <details class="technical-details">
+          <summary><span>Technical details</span><i aria-hidden="true"></i></summary>
+          <div class="details-content">
+            {% if job.result %}
+            <section class="result-fields"><h3>Result</h3><dl>{% for key, value in job.result.items() %}<div><dt>{{ key|replace('_', ' ')|title }}</dt><dd>{% if value is sameas true %}<span class="boolean-true">Yes</span>{% elif value is sameas false %}<span class="boolean-false">No</span>{% else %}{{ value }}{% endif %}</dd></div>{% endfor %}</dl></section>
+            {% endif %}
+            {% if job.logs %}
+            <section class="job-logs"><h3>Execution log</h3><ol>{% for line in job.logs %}<li><span>{{ '%02d'|format(loop.index) }}</span><code>{{ line }}</code></li>{% endfor %}</ol></section>
+            {% endif %}
+            {% if job.error_details %}
+            <section class="error-details"><h3>Error context</h3><dl>{% for key, value in job.error_details.items() %}<div><dt>{{ key|replace('_', ' ')|title }}</dt><dd>{{ value }}</dd></div>{% endfor %}</dl></section>
+            {% endif %}
+            {% if job.result %}<details class="raw-payload"><summary>Raw result payload</summary><pre>{{ job.result|tojson(indent=2) }}</pre></details>{% endif %}
+            {% if not job.result and not job.logs and not job.error_details %}<p class="details-empty">No additional technical details were recorded for this job.</p>{% endif %}
+          </div>
+        </details>
+      </article>
+      {% else %}<div class="empty-state"><strong>No jobs created</strong><span>This run does not contain device work.</span></div>{% endfor %}
+    </div>
+  </section>
+</section>
+{% endblock %}

@@ -3,13 +3,13 @@ requires = ["setuptools>=75"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "hilforge"
+name = "pulsehunter"
 version = "0.1.0"
-description = "A local hardware-validation orchestration MVP using simulated device agents."
+description = "Distributed Device Validation Platform"
 readme = "README.md"
 requires-python = ">=3.14"
 license = "MIT"
-authors = [{ name = "HILForge contributors" }]
+authors = [{ name = "PulseHunter contributors" }]
 keywords = [
   "hardware-in-the-loop",
   "device-lab",
@@ -47,15 +47,15 @@ dev = [
 ]
 
 [project.urls]
-Repository = "https://github.com/MdFahimBashar/HILForge"
-Issues = "https://github.com/MdFahimBashar/HILForge/issues"
+Repository = "https://github.com/MdFahimBashar/PulseHunter"
+Issues = "https://github.com/MdFahimBashar/PulseHunter/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["hilforge*"]
+include = ["pulsehunter*"]
 
 [tool.setuptools.package-data]
-hilforge = [
+pulsehunter = [
   "py.typed",
   "static/*",
   "static/**/*",
@@ -86,7 +86,7 @@ line-ending = "lf"
 
 [tool.mypy]
 python_version = "3.14"
-files = ["src/hilforge"]
+files = ["src/pulsehunter"]
 plugins = ["pydantic.mypy"]
 check_untyped_defs = true
 disallow_untyped_defs = true

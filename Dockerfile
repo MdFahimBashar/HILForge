@@ -21,8 +21,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1
 
-RUN groupadd --system --gid 10001 hilforge \
-    && useradd --system --uid 10001 --gid hilforge --create-home hilforge
+RUN groupadd --system --gid 10001 pulsehunter \
+    && useradd --system --uid 10001 --gid pulsehunter --create-home pulsehunter
 
 WORKDIR /app
 
@@ -33,10 +33,10 @@ RUN python -m pip install /wheels/*.whl \
 COPY alembic.ini ./alembic.ini
 COPY alembic ./alembic
 
-USER hilforge
+USER pulsehunter
 
 EXPOSE 8000 9000
 
 STOPSIGNAL SIGTERM
 
-CMD ["uvicorn", "hilforge.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "pulsehunter.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 
-from hilforge.core.time import heartbeat_is_fresh
+from pulsehunter.core.time import heartbeat_is_fresh
 
 
 def test_heartbeat_freshness_has_an_exact_stale_boundary() -> None:

@@ -6,9 +6,9 @@ from datetime import timedelta
 import httpx
 import pytest
 
-from hilforge.core.time import utc_now
-from hilforge.schemas.agent import AgentExecutionRequest
-from hilforge.services.device_client import HttpDeviceClient, TransientDeviceError
+from pulsehunter.core.time import utc_now
+from pulsehunter.schemas.agent import AgentExecutionRequest
+from pulsehunter.services.device_client import HttpDeviceClient, TransientDeviceError
 
 
 def execution_request() -> AgentExecutionRequest:

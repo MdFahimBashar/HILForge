@@ -87,7 +87,7 @@ def verify(base_url: str, timeout: float) -> dict[str, Any]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Verify the complete local HILForge workflow")
+    parser = argparse.ArgumentParser(description="Verify the complete local PulseHunter workflow")
     parser.add_argument("--base-url", default="http://127.0.0.1:8000")
     parser.add_argument("--timeout", type=float, default=60)
     args = parser.parse_args()

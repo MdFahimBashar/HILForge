@@ -6,15 +6,15 @@ import pytest
 from redis import Redis
 from sqlalchemy import inspect, text
 
-from hilforge.core.config import get_settings
-from hilforge.db.session import engine
+from pulsehunter.core.config import get_settings
+from pulsehunter.db.session import engine
 
 pytestmark = pytest.mark.integration
 
 
 @pytest.mark.skipif(
-    os.getenv("HILFORGE_RUN_SERVICE_TESTS") != "1",
-    reason="set HILFORGE_RUN_SERVICE_TESTS=1 with PostgreSQL and Redis available",
+    os.getenv("PULSEHUNTER_RUN_SERVICE_TESTS") != "1",
+    reason="set PULSEHUNTER_RUN_SERVICE_TESTS=1 with PostgreSQL and Redis available",
 )
 def test_real_postgres_schema_and_redis_are_ready() -> None:
     settings = get_settings()

@@ -3,8 +3,8 @@ from __future__ import annotations
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from hilforge.db.seed import DEFAULT_SUITE_ID, seed_default_suite
-from hilforge.models.domain import TestSuite as SuiteModel
+from pulsehunter.db.seed import DEFAULT_SUITE_ID, seed_default_suite
+from pulsehunter.models.domain import TestSuite as SuiteModel
 
 
 def test_default_suite_seed_is_idempotent(db_session: Session) -> None:

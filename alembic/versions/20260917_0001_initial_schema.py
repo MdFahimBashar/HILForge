@@ -1,4 +1,4 @@
-"""Create the initial HILForge persistence schema.
+"""Create the initial PulseHunter persistence schema.
 
 Revision ID: 20260917_0001
 Revises: None

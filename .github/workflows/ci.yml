@@ -1,4 +1,4 @@
-name: CI
+name: PulseHunter CI
 
 on:
   push:
@@ -39,11 +39,11 @@ jobs:
           --health-timeout 3s
           --health-retries 20
     env:
-      HILFORGE_ENVIRONMENT: test
-      HILFORGE_LOG_LEVEL: INFO
-      HILFORGE_DATABASE_URL: postgresql+psycopg://hilforge:hilforge@127.0.0.1:5432/hilforge
-      HILFORGE_REDIS_URL: redis://127.0.0.1:6379/0
-      HILFORGE_RUN_SERVICE_TESTS: "1"
+      PULSEHUNTER_ENVIRONMENT: test
+      PULSEHUNTER_LOG_LEVEL: INFO
+      PULSEHUNTER_DATABASE_URL: postgresql+psycopg://hilforge:hilforge@127.0.0.1:5432/hilforge
+      PULSEHUNTER_REDIS_URL: redis://127.0.0.1:6379/0
+      PULSEHUNTER_RUN_SERVICE_TESTS: "1"
       PYTHONUNBUFFERED: "1"
     steps:
       - name: Check out repository
@@ -64,8 +64,8 @@ jobs:
         run: |
           alembic upgrade head
           alembic check
-          python -m hilforge.db.seed
-          python -m hilforge.db.seed
+          python -m pulsehunter.db.seed
+          python -m pulsehunter.db.seed
 
       - name: Lint and check formatting
         run: |

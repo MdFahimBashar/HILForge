@@ -5,24 +5,24 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from sqlalchemy.orm import Session
 
-from hilforge.models.domain import (
+from pulsehunter.models.domain import (
     Device,
     DeviceStatus,
     JobStatus,
     RunStatus,
 )
-from hilforge.models.domain import (
+from pulsehunter.models.domain import (
     TestJob as JobModel,
 )
-from hilforge.models.domain import (
+from pulsehunter.models.domain import (
     TestRun as RunModel,
 )
-from hilforge.models.domain import (
+from pulsehunter.models.domain import (
     TestSuite as SuiteModel,
 )
-from hilforge.schemas.api import RunCreate
-from hilforge.services.jobs import InvalidJobTransitionError, transition_job
-from hilforge.services.runs import create_run, recompute_run_status
+from pulsehunter.schemas.api import RunCreate
+from pulsehunter.services.jobs import InvalidJobTransitionError, transition_job
+from pulsehunter.services.runs import create_run, recompute_run_status
 
 
 def add_suite(db_session: Session) -> SuiteModel:

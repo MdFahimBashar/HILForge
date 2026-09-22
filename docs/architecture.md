@@ -1,8 +1,8 @@
-# HILForge architecture
+# PulseHunter architecture
 
 ## System boundary
 
-HILForge coordinates validation work; it does not contain hardware-specific
+PulseHunter coordinates validation work; it does not contain hardware-specific
 test code in its control plane. The API owns user-facing requests and durable
 resource allocation, workers own asynchronous orchestration, and device agents
 own execution. Today those agents are Python simulators. A physical agent can
@@ -113,7 +113,7 @@ longer than the normal device call.
 
 ## Delivery and idempotency model
 
-HILForge provides at-least-once delivery, not exactly-once execution.
+PulseHunter provides at-least-once delivery, not exactly-once execution.
 
 - The API commits the run before publishing. This avoids a message referring
   to nonexistent state; the reconciler repairs the opposite failure (committed

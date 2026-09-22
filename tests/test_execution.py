@@ -9,18 +9,18 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from hilforge.core.config import Settings
-from hilforge.core.time import utc_now
-from hilforge.db.base import Base
-from hilforge.db.seed import seed_default_suite
-from hilforge.models.domain import DeviceStatus, JobStatus, RunStatus
-from hilforge.models.domain import TestJob as JobModel
-from hilforge.schemas.agent import AgentExecutionRequest, AgentExecutionResponse, AgentOutcome
-from hilforge.schemas.api import DeviceRegister, RunCreate
-from hilforge.services.device_client import DeviceTimeoutError, TransientDeviceError
-from hilforge.services.devices import register_device
-from hilforge.services.execution import JobExecutor
-from hilforge.services.runs import create_run
+from pulsehunter.core.config import Settings
+from pulsehunter.core.time import utc_now
+from pulsehunter.db.base import Base
+from pulsehunter.db.seed import seed_default_suite
+from pulsehunter.models.domain import DeviceStatus, JobStatus, RunStatus
+from pulsehunter.models.domain import TestJob as JobModel
+from pulsehunter.schemas.agent import AgentExecutionRequest, AgentExecutionResponse, AgentOutcome
+from pulsehunter.schemas.api import DeviceRegister, RunCreate
+from pulsehunter.services.device_client import DeviceTimeoutError, TransientDeviceError
+from pulsehunter.services.devices import register_device
+from pulsehunter.services.execution import JobExecutor
+from pulsehunter.services.runs import create_run
 
 
 @pytest.fixture

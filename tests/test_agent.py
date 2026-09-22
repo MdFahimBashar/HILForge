@@ -6,10 +6,10 @@ from datetime import timedelta
 import pytest
 from pydantic import ValidationError
 
-from hilforge.agent.config import AgentMode, AgentSettings
-from hilforge.agent.runtime import AgentEngine, TransientSimulationError
-from hilforge.core.time import utc_now
-from hilforge.schemas.agent import AgentExecutionRequest, AgentOutcome
+from pulsehunter.agent.config import AgentMode, AgentSettings
+from pulsehunter.agent.runtime import AgentEngine, TransientSimulationError
+from pulsehunter.core.time import utc_now
+from pulsehunter.schemas.agent import AgentExecutionRequest, AgentOutcome
 
 
 def request() -> AgentExecutionRequest:

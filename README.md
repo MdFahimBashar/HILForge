@@ -1,6 +1,8 @@
-# HILForge
+# PulseHunter
 
-HILForge is a small hardware-CI control plane. It reserves available devices,
+**Distributed Device Validation Platform**
+
+PulseHunter is a compact hardware-CI control plane. It reserves available devices,
 queues a validation job for each one, runs those jobs concurrently through
 networked agents, and stores the resulting status, logs, timing, and errors.
 The included devices are deterministic Python simulators, so the complete
@@ -178,8 +180,8 @@ and seed idempotency from the same container network:
 
 ```bash
 docker compose run --rm migrate alembic check
-docker compose run --rm migrate python -m hilforge.db.seed
-docker compose run --rm migrate python -m hilforge.db.seed
+docker compose run --rm migrate python -m pulsehunter.db.seed
+docker compose run --rm migrate python -m pulsehunter.db.seed
 ```
 
 ## Architecture decisions
@@ -223,4 +225,4 @@ These are planned directions, not implemented features:
 
 See [PROJECT_STATUS.md](PROJECT_STATUS.md) for the verified implementation
 snapshot and [SECURITY.md](SECURITY.md) before using the software outside a
-local development machine. HILForge is MIT licensed.
+local development machine. PulseHunter is MIT licensed.

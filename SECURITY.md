@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-HILForge is an early local-development MVP. Security fixes are made only on the
+PulseHunter is an early local-development MVP. Security fixes are made only on the
 latest revision of the default branch; older revisions are not supported.
 
 ## Reporting a vulnerability
@@ -21,7 +21,7 @@ details.
 The current MVP has no authentication or transport-layer security and is
 intended for a trusted local development environment. Compose publishes only
 the API on the loopback interface, but that is not a production security
-boundary. Do not expose HILForge to an untrusted network without adding and
+boundary. Do not expose PulseHunter to an untrusted network without adding and
 reviewing appropriate authentication, authorization, TLS, secret management,
 and network controls.
 

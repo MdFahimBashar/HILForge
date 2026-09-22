@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>{% block title %}PulseHunter{% endblock %}</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script src="/static/app.js" defer></script>
+  {% block head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="app-header">
+    <div class="header-inner">
+      <a class="brand" href="/" aria-label="PulseHunter dashboard">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="brand-name">PulseHunter</span>
+      </a>
+      <nav class="primary-nav" aria-label="Primary navigation">
+        <a href="/" {% if request.url.path == '/' %}aria-current="page"{% endif %}>Dashboard</a>
+        <a href="/docs">API reference</a>
+      </nav>
+      <div class="environment-indicator" title="PostgreSQL and Redis are available">
+        <span class="live-dot" aria-hidden="true"></span>
+        <span>Local lab</span>
+      </div>
+    </div>
+  </header>
+  <main id="main-content" class="app-shell">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="app-footer">
+    <span>PulseHunter</span>
+    <span class="footer-separator" aria-hidden="true"></span>
+    <span>Distributed Device Validation Platform</span>
+  </footer>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

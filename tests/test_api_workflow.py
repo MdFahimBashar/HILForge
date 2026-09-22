@@ -9,10 +9,10 @@ import httpx
 import pytest
 from sqlalchemy.orm import Session
 
-from hilforge.db.seed import seed_default_suite
-from hilforge.db.session import get_db
-from hilforge.main import app
-from hilforge.models.domain import DeviceStatus
+from pulsehunter.db.seed import seed_default_suite
+from pulsehunter.db.session import get_db
+from pulsehunter.main import app
+from pulsehunter.models.domain import DeviceStatus
 
 ApiRequest = Callable[[str, str, dict[str, Any] | None], httpx.Response]
 
@@ -40,7 +40,7 @@ def api_request(
 
         return asyncio.run(send())
 
-    monkeypatch.setattr("hilforge.main.redis_is_available", lambda _: True)
+    monkeypatch.setattr("pulsehunter.main.redis_is_available", lambda _: True)
     app.dependency_overrides[get_db] = override_get_db
     yield request
     app.dependency_overrides.clear()
@@ -83,7 +83,7 @@ def test_run_api_queues_jobs_and_exposes_run_details(
     device = api_request("POST", "/internal/devices/register", registration_body())
     device_id = device.json()["id"]
     published: list[uuid.UUID] = []
-    monkeypatch.setattr("hilforge.web.enqueue_jobs", lambda ids: published.extend(ids))
+    monkeypatch.setattr("pulsehunter.web.enqueue_jobs", lambda ids: published.extend(ids))
 
     created = api_request(
         "POST",

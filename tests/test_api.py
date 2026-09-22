@@ -7,19 +7,19 @@ import httpx
 import pytest
 from sqlalchemy.orm import Session
 
-from hilforge.core.time import utc_now
-from hilforge.db.seed import seed_default_suite
-from hilforge.db.session import get_db
-from hilforge.main import app
-from hilforge.schemas.api import DeviceRegister
-from hilforge.services.devices import register_device
+from pulsehunter.core.time import utc_now
+from pulsehunter.db.seed import seed_default_suite
+from pulsehunter.db.session import get_db
+from pulsehunter.main import app
+from pulsehunter.schemas.api import DeviceRegister
+from pulsehunter.services.devices import register_device
 
 ApiGet = Callable[[str], httpx.Response]
 
 
 @pytest.fixture
 def api_get(db_session: Session, monkeypatch: pytest.MonkeyPatch) -> Iterator[ApiGet]:
-    monkeypatch.setattr("hilforge.main.redis_is_available", lambda _: True)
+    monkeypatch.setattr("pulsehunter.main.redis_is_available", lambda _: True)
 
     def override_get_db() -> Iterator[Session]:
         yield db_session

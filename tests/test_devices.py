@@ -4,22 +4,22 @@ from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.orm import Session
 
-from hilforge.models.domain import (
+from pulsehunter.models.domain import (
     DeviceStatus,
     JobStatus,
     RunStatus,
 )
-from hilforge.models.domain import (
+from pulsehunter.models.domain import (
     TestJob as JobModel,
 )
-from hilforge.models.domain import (
+from pulsehunter.models.domain import (
     TestRun as RunModel,
 )
-from hilforge.models.domain import (
+from pulsehunter.models.domain import (
     TestSuite as SuiteModel,
 )
-from hilforge.schemas.api import DeviceHeartbeat, DeviceRegister
-from hilforge.services.devices import (
+from pulsehunter.schemas.api import DeviceHeartbeat, DeviceRegister
+from pulsehunter.services.devices import (
     mark_stale_devices_offline,
     record_heartbeat,
     register_device,

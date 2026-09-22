@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from hilforge.core.config import Settings
+from pulsehunter.core.config import Settings
 
 
 def test_valid_timing_configuration() -> None:

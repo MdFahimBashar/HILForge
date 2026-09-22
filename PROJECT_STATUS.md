@@ -2,13 +2,13 @@
 
 ## Current state
 
-The end-to-end local MVP is implemented. HILForge can register three standalone
+The end-to-end local MVP is implemented. PulseHunter can register three standalone
 simulated devices, reserve them for a run, dispatch concurrent jobs through
 Redis/Celery, persist results in PostgreSQL, retry transient failures, enforce
 timeouts, aggregate the run, release devices, and expose the result in REST and
 HTML views.
 
-Target runtime: Python 3.14. Release-candidate verification: 2026-09-18.
+Target runtime: Python 3.14. Release-candidate verification: 2026-09-22.
 
 ## Implemented architecture
 
@@ -40,7 +40,7 @@ Target runtime: Python 3.14. Release-candidate verification: 2026-09-18.
 
 ## Verification status
 
-Verified locally on 2026-09-18:
+Verified locally on 2026-09-22:
 
 - Python 3.14.5 loaded the installed package and `pip check` found no broken
   requirements.
@@ -84,7 +84,7 @@ ruff format --check .
 mypy src
 pytest -W error
 docker compose run --rm migrate alembic check
-docker compose run --rm migrate python -m hilforge.db.seed
+docker compose run --rm migrate python -m pulsehunter.db.seed
 ```
 
 ## Next recommended milestone

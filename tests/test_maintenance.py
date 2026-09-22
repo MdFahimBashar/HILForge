@@ -4,14 +4,14 @@ from datetime import timedelta
 
 from sqlalchemy.orm import Session
 
-from hilforge.core.config import Settings
-from hilforge.core.time import utc_now
-from hilforge.db.seed import seed_default_suite
-from hilforge.models.domain import DeviceStatus, JobStatus
-from hilforge.schemas.api import DeviceRegister, RunCreate
-from hilforge.services.devices import register_device
-from hilforge.services.maintenance import reconcile_dispatchable_jobs
-from hilforge.services.runs import create_run
+from pulsehunter.core.config import Settings
+from pulsehunter.core.time import utc_now
+from pulsehunter.db.seed import seed_default_suite
+from pulsehunter.models.domain import DeviceStatus, JobStatus
+from pulsehunter.schemas.api import DeviceRegister, RunCreate
+from pulsehunter.services.devices import register_device
+from pulsehunter.services.maintenance import reconcile_dispatchable_jobs
+from pulsehunter.services.runs import create_run
 
 
 def test_reconciler_recovers_an_expired_worker_lease(db_session: Session) -> None:

@@ -9,7 +9,7 @@ description = "Distributed Device Validation Platform"
 readme = "README.md"
 requires-python = ">=3.14"
 license = "MIT"
-authors = [{ name = "PulseHunter contributors" }]
+authors = [{ name = "Md Fahim Bashar" }]
 keywords = [
   "hardware-in-the-loop",
   "device-lab",

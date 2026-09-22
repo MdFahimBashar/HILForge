@@ -58,8 +58,8 @@ Verified locally on 2026-09-22:
   passed on attempt 1, unreliable passed on attempt 2, slow timed out on attempt
   3, the aggregate run failed as designed, and all devices returned online.
 
-GitHub Actions is configured but cannot be described as remotely passing until
-the repository is pushed and an Actions run completes.
+GitHub Actions has passed both the `quality-and-tests` and `docker-e2e` jobs on
+the public `main` branch.
 
 ## Known issues and limitations
 
@@ -89,7 +89,7 @@ docker compose run --rm migrate python -m pulsehunter.db.seed
 
 ## Next recommended milestone
 
-After code review, add authenticated agent enrollment and a capability-aware
-scheduler before attempting physical hardware. Those changes strengthen the
+Add authenticated agent enrollment and a capability-aware scheduler before
+attempting physical hardware. Those changes strengthen the
 existing boundary without adding Kubernetes, cloud deployment, or a second
 application architecture.

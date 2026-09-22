@@ -19,7 +19,7 @@ class Settings(BaseSettings):
 
     app_name: str = "PulseHunter"
     environment: Literal["development", "test", "production"] = "development"
-    database_url: str = "postgresql+psycopg://hilforge:hilforge@postgres:5432/hilforge"
+    database_url: str = "postgresql+psycopg://pulsehunter:pulsehunter@postgres:5432/pulsehunter"
     redis_url: str = "redis://redis:6379/0"
     log_level: str = "INFO"
 

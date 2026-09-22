@@ -19,13 +19,13 @@ jobs:
       postgres:
         image: postgres:17-alpine
         env:
-          POSTGRES_DB: hilforge
-          POSTGRES_USER: hilforge
-          POSTGRES_PASSWORD: hilforge
+          POSTGRES_DB: pulsehunter
+          POSTGRES_USER: pulsehunter
+          POSTGRES_PASSWORD: pulsehunter
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U hilforge -d hilforge"
+          --health-cmd "pg_isready -U pulsehunter -d pulsehunter"
           --health-interval 5s
           --health-timeout 3s
           --health-retries 20
@@ -41,7 +41,7 @@ jobs:
     env:
       PULSEHUNTER_ENVIRONMENT: test
       PULSEHUNTER_LOG_LEVEL: INFO
-      PULSEHUNTER_DATABASE_URL: postgresql+psycopg://hilforge:hilforge@127.0.0.1:5432/hilforge
+      PULSEHUNTER_DATABASE_URL: postgresql+psycopg://pulsehunter:pulsehunter@127.0.0.1:5432/pulsehunter
       PULSEHUNTER_REDIS_URL: redis://127.0.0.1:6379/0
       PULSEHUNTER_RUN_SERVICE_TESTS: "1"
       PYTHONUNBUFFERED: "1"

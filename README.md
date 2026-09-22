@@ -2,6 +2,8 @@
 
 **Distributed Device Validation Platform**
 
+[![PulseHunter CI](https://github.com/MdFahimBashar/PulseHunter/actions/workflows/ci.yml/badge.svg)](https://github.com/MdFahimBashar/PulseHunter/actions/workflows/ci.yml)
+
 PulseHunter is a distributed validation control plane for scheduling and
 executing tests across networked devices, with heartbeat-based health
 monitoring, retries, timeouts, durable job state, and automated failure
@@ -24,7 +26,7 @@ asynchronously, survive temporary failures, and preserve results for engineers.
 - bounded retries with exponential backoff, HTTP timeouts, and worker leases
 - a periodic reconciler that recovers durable queued work and expired leases
 - run-status aggregation and correct device release after terminal jobs
-- REST/OpenAPI endpoints plus a small server-rendered dashboard
+- REST/OpenAPI endpoints plus a server-rendered dashboard
 - Alembic migrations, deterministic seeding, automated tests, and GitHub Actions
 
 ## Architecture

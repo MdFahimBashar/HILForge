@@ -3,7 +3,7 @@ name: pulsehunter
 x-app-environment: &app-environment
   PULSEHUNTER_ENVIRONMENT: ${PULSEHUNTER_ENVIRONMENT:-development}
   PULSEHUNTER_LOG_LEVEL: ${PULSEHUNTER_LOG_LEVEL:-INFO}
-  PULSEHUNTER_DATABASE_URL: ${PULSEHUNTER_DATABASE_URL:-postgresql+psycopg://hilforge:hilforge@postgres:5432/hilforge}
+  PULSEHUNTER_DATABASE_URL: ${PULSEHUNTER_DATABASE_URL:-postgresql+psycopg://pulsehunter:pulsehunter@postgres:5432/pulsehunter}
   PULSEHUNTER_REDIS_URL: ${PULSEHUNTER_REDIS_URL:-redis://redis:6379/0}
   PULSEHUNTER_JOB_TIMEOUT_SECONDS: ${PULSEHUNTER_JOB_TIMEOUT_SECONDS:-3}
   PULSEHUNTER_JOB_MAX_ATTEMPTS: ${PULSEHUNTER_JOB_MAX_ATTEMPTS:-3}
@@ -45,9 +45,9 @@ services:
   postgres:
     image: postgres:17-alpine
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-hilforge}
-      POSTGRES_USER: ${POSTGRES_USER:-hilforge}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hilforge}
+      POSTGRES_DB: ${POSTGRES_DB:-pulsehunter}
+      POSTGRES_USER: ${POSTGRES_USER:-pulsehunter}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pulsehunter}
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:

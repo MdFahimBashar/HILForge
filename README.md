@@ -2,14 +2,11 @@
 
 **Distributed Device Validation Platform**
 
-PulseHunter is a compact hardware-CI control plane. It reserves available devices,
-queues a validation job for each one, runs those jobs concurrently through
-networked agents, and stores the resulting status, logs, timing, and errors.
-The included devices are deterministic Python simulators, so the complete
-failure-handling workflow can be demonstrated without owning a hardware lab.
-
-This repository deliberately favors a compact, explainable architecture over
-production-scale infrastructure.
+PulseHunter is a distributed validation control plane for scheduling and
+executing tests across networked devices, with heartbeat-based health
+monitoring, retries, timeouts, durable job state, and automated failure
+recovery. Deterministic Python simulators make the complete workflow runnable
+without a physical hardware lab.
 
 ## Problem
 
@@ -18,7 +15,7 @@ checking a bench full of boards. A useful lab service must know which devices
 are alive and available, allocate them without double-booking, perform work
 asynchronously, survive temporary failures, and preserve results for engineers.
 
-## What the MVP demonstrates
+## Features
 
 - registration, heartbeats, online/offline/busy state, and exclusive reservation
 - healthy, slow, and unreliable standalone device agents
@@ -111,14 +108,6 @@ first attempt, unreliable returns one transient failure then passes, and slow
 exhausts three HTTP timeouts. That intentional mixed result makes retries,
 timeouts, persistence, aggregation, and release behavior visible in one run.
 
-## Screenshots
-
-Screenshots are not yet checked into the repository, and no placeholder images
-are fabricated. Suggested captures for the first release are:
-
-- dashboard with registered simulators and recent-run summary
-- run-detail page showing the healthy, retry, and timeout outcomes
-
 ## API
 
 | Method | Path | Purpose |
@@ -150,7 +139,7 @@ The agent execution endpoint is idempotent by job UUID within one agent
 process. An accepted execution continues even if the worker's HTTP request
 times out, and a duplicate request attaches to the same in-memory task.
 
-## Local development
+## Testing and local development
 
 Python 3.14 is the supported development runtime.
 
@@ -221,8 +210,8 @@ These are planned directions, not implemented features:
 - artifact retention, log streaming, metrics, and tracing
 - durable agent-side idempotency and physical-device integrations
 
-## Project status and security
+## Documentation and security
 
-See [PROJECT_STATUS.md](PROJECT_STATUS.md) for the verified implementation
-snapshot and [SECURITY.md](SECURITY.md) before using the software outside a
+See [PROJECT_STATUS.md](PROJECT_STATUS.md) for the current implementation
+status and [SECURITY.md](SECURITY.md) before using the software outside a
 local development machine. PulseHunter is MIT licensed.

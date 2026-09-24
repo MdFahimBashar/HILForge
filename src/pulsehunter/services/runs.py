@@ -65,7 +65,11 @@ def create_run(
     if not devices:
         raise NoAvailableDevicesError("No online, available devices were found")
 
-    test_run = TestRun(test_suite_id=suite.id, status=RunStatus.QUEUED)
+    test_run = TestRun(
+        test_suite_id=suite.id,
+        status=RunStatus.QUEUED,
+        source=request.source.model_dump(exclude_none=True) if request.source else None,
+    )
     session.add(test_run)
     session.flush()
 
@@ -176,6 +180,7 @@ def run_read_model(test_run: TestRun) -> TestRunRead:
         started_at=test_run.started_at,
         completed_at=test_run.completed_at,
         counts=_run_counts(test_run.jobs),
+        source=test_run.source,
     )
 
 

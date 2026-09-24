@@ -94,6 +94,9 @@ jobs:
       - name: Verify healthy, unreliable, and timeout paths
         run: python scripts/verify_e2e.py --timeout 90
 
+      - name: Verify CI client pass/fail build gating
+        run: python scripts/verify_ci.py --timeout 90
+
       - name: Capture service logs
         if: always()
         run: docker compose logs --no-color

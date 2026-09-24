@@ -38,6 +38,9 @@ dependencies = [
   "uvicorn[standard]>=0.34,<1",
 ]
 
+[project.scripts]
+pulsehunter-ci = "pulsehunter.ci:main"
+
 [project.optional-dependencies]
 dev = [
   "mypy>=1.14,<2",

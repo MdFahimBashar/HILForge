@@ -105,7 +105,37 @@ def test_run_api_queues_jobs_and_exposes_run_details(
     assert runs.status_code == 200 and runs.json()[0]["id"] == run_id
     assert jobs.status_code == 200 and jobs.json()[0]["id"] == str(published[0])
     assert detail.status_code == 200 and detail.json()["id"] == run_id
+    assert detail.json()["source"] is None
     assert device_detail.json()["status"] == "busy"
+
+
+def test_ci_source_is_validated_and_persisted(
+    api_request: ApiRequest,
+    db_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    suite = seed_default_suite(db_session)
+    db_session.commit()
+    device = api_request("POST", "/internal/devices/register", registration_body())
+    monkeypatch.setattr("pulsehunter.web.enqueue_jobs", lambda _: None)
+    source = {
+        "repository": "team/firmware",
+        "commit_sha": "a" * 40,
+        "ref": "refs/heads/main",
+        "build_id": "1234",
+    }
+    request_body = {
+        "test_suite_id": str(suite.id),
+        "device_ids": [device.json()["id"]],
+        "source": source,
+    }
+    invalid = api_request("POST", "/runs", {**request_body, "source": {"commit_sha": "bad!"}})
+    assert invalid.status_code == 422
+
+    created = api_request("POST", "/runs", request_body)
+    assert created.status_code == 202
+    assert created.json()["source"] == source
+    assert api_request("GET", f"/runs/{created.json()['id']}").json()["source"] == source
 
 
 def test_dashboard_renders_fleet_and_run_controls(

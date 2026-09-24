@@ -127,6 +127,7 @@ class TestRun(TimestampMixin, Base):
     )
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    source: Mapped[dict[str, str] | None] = mapped_column(JSON)
 
     test_suite: Mapped[TestSuite] = relationship(back_populates="runs")
     jobs: Mapped[list[TestJob]] = relationship(

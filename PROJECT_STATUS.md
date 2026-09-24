@@ -6,22 +6,23 @@ The end-to-end local MVP is implemented. PulseHunter can register three standalo
 simulated devices, reserve them for a run, dispatch concurrent jobs through
 Redis/Celery, persist results in PostgreSQL, retry transient failures, enforce
 timeouts, aggregate the run, release devices, and expose the result in REST and
-HTML views.
+HTML views. An API-based CLI can create a run and gate a CI job on its final
+status.
 
-Target runtime: Python 3.14. Release-candidate verification: 2026-09-22.
+Target runtime: Python 3.14. Local verification: 2026-09-24.
 
 ## Implemented architecture
 
 - FastAPI control plane and server-rendered Jinja dashboard.
 - PostgreSQL source of truth with SQLAlchemy 2 and Alembic migration
-  `20260917_0001`.
+  `20260917_0001`, plus additive run-source migration `20260924_0002`.
 - Redis as Celery broker only; no Celery result backend.
 - Celery worker with concurrency 4 and Celery Beat maintenance scheduler.
 - Database-backed claims, attempt ownership, leases, reconciliation, retries,
   exponential backoff, timeouts, terminal persistence, aggregation, and release.
 - Separate healthy, slow, and unreliable HTTP device-agent processes.
 - Docker Compose topology, automated tests, and GitHub Actions quality plus
-  Docker end-to-end jobs.
+  Docker end-to-end jobs, including CI-client pass/fail gating.
 
 ## Implemented features
 
@@ -37,29 +38,34 @@ Target runtime: Python 3.14. Release-candidate verification: 2026-09-22.
 - automatic durable-job and expired-worker-lease reconciliation
 - dashboard fleet metrics, run creation, recent runs, and job detail
 - generated Swagger/OpenAPI at `/docs`
+- `pulsehunter-ci` run creation, polling, exit codes, per-device summaries, and
+  optional caller-supplied source-commit metadata stored with each run
 
 ## Verification status
 
-Verified locally on 2026-09-22:
+Verified locally on 2026-09-24:
 
-- Python 3.14.5 loaded the installed package and `pip check` found no broken
-  requirements.
-- `ruff check .` passed and `ruff format --check .` confirmed all 53 files were
+- Python 3.14.5 ran the host suite and Python 3.14.7 ran the Docker suite.
+- `ruff check .` passed and `ruff format --check .` confirmed all 57 files were
   formatted.
-- Mypy passed across all 33 source files.
-- The host test run passed 26 tests and skipped only the opt-in service test.
-- The full Compose-backed test run enabled that service test and passed all 27
+- Mypy passed across all 34 source files.
+- The host test run passed 33 tests and skipped only the opt-in service test.
+- The full Compose-backed test run enabled that service test and passed all 34
   tests against PostgreSQL and Redis.
 - `docker compose config --quiet` passed. The Python 3.14 image rebuilt, the
-  complete stack was force-recreated, PostgreSQL, Redis, the API, and all three
+  complete stack was recreated, PostgreSQL, Redis, the API, and all three
   agents reported healthy, and the worker and Beat processes remained running.
-- Alembic reported no new upgrade operations from the model metadata.
+- Alembic applied the additive run-source migration and reported no new
+  upgrade operations from the model metadata.
 - The automated mixed-behavior run completed three concurrent jobs: healthy
   passed on attempt 1, unreliable passed on attempt 2, slow timed out on attempt
   3, the aggregate run failed as designed, and all devices returned online.
+- The packaged CI client returned exit 0 for the healthy agent and exit 1 for
+  the slow agent's bounded timeout; both printed run and device summaries, and
+  source metadata was persisted and returned by the API.
 
-GitHub Actions has passed both the `quality-and-tests` and `docker-e2e` jobs on
-the public `main` branch.
+The previously published `main` revision passed both GitHub Actions jobs. This
+new revision has been verified locally but has not been committed or run remotely.
 
 ## Known issues and limitations
 

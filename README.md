@@ -29,6 +29,7 @@ asynchronously, survive temporary failures, and preserve results for engineers.
 - a periodic reconciler that recovers durable queued work and expired leases
 - run-status aggregation and correct device release after terminal jobs
 - REST/OpenAPI endpoints plus a server-rendered dashboard
+- API-based CI client that gates a build on the final device-validation result
 - Alembic migrations, deterministic seeding, automated tests, and GitHub Actions
 
 ## Architecture
@@ -36,6 +37,7 @@ asynchronously, survive temporary failures, and preserve results for engineers.
 ```mermaid
 flowchart LR
     U["User / dashboard"] --> A["FastAPI control plane"]
+    C["CI client"] --> A
     A --> P[("PostgreSQL\ndurable source of truth")]
     A --> R[("Redis\nCelery broker only")]
     R --> W["Celery workers\nconcurrency 4"]
@@ -112,6 +114,35 @@ first attempt, unreliable returns one transient failure then passes, and slow
 exhausts three HTTP timeouts. That intentional mixed result makes retries,
 timeouts, persistence, aggregation, and release behavior visible in one run.
 
+## CI integration
+
+After installing the Python package, a CI job can create a run and wait for its
+result using the same API and workers as the dashboard:
+
+```bash
+pulsehunter-ci run --server "$PULSEHUNTER_URL" --suite smoke \
+  --device-id "$PULSEHUNTER_DEVICE_ID" --wait --timeout 120
+```
+
+`--suite` takes the slug from `GET /test-suites`; repeat `--device-id` to request
+multiple devices, or omit it to reserve every available device. `--wait` makes
+the process a build gate: exit `0` means the run passed; `1` means validation
+failed or was cancelled; `2` means a client/API/start error; `3` means the
+client's wait deadline expired. Without `--wait`, exit `0` means only that the
+run was accepted, **not** that validation passed. The default all-device demo
+includes a slow agent and intentionally fails, so select a passing device for
+a green CI example.
+
+Optional `--repository`, `--commit`, `--ref`, and `--build-id` attach source
+context to the run (the commit SHA is required if any source field is used).
+`GET /runs/{run_id}` returns this context, making the triggering commit
+traceable without changing job execution. See the
+[GitHub Actions example](examples/github-actions-device-validation.yml) for a
+trusted self-hosted runner on the lab network. PulseHunter has no agent/user
+authentication or TLS in this MVP; source context is caller-supplied, not
+cryptographically verified. Do not expose its API to an untrusted CI runner or
+the public internet.
+
 ## API
 
 | Method | Path | Purpose |
@@ -127,9 +158,10 @@ timeouts, persistence, aggregation, and release behavior visible in one run.
 | `POST` | `/internal/devices/register` | Register or refresh an agent by name |
 | `POST` | `/internal/devices/{device_id}/heartbeat` | Update agent liveness/capabilities |
 
-`POST /runs` accepts a `test_suite_id` and an optional non-empty `device_ids`
-list. Without device IDs it selects every fresh online device. It returns
-`409` when the requested devices cannot be reserved.
+`POST /runs` accepts a `test_suite_id`, an optional non-empty `device_ids` list,
+and optional validated `source` context. Without device IDs it selects every
+fresh online device. It returns `409` when the requested devices cannot be
+reserved.
 
 ## Simulation modes
 

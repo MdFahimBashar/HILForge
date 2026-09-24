@@ -1,0 +1,38 @@
+# Copy this into a firmware repository's .github/workflows directory.
+# Use a trusted self-hosted Linux runner on the PulseHunter lab network.
+# Set repository variables PULSEHUNTER_URL and PULSEHUNTER_DEVICE_ID.
+name: Device validation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate-device:
+    # Do not run untrusted fork PR code on a self-hosted lab runner.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, linux, pulsehunter-lab]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.14'
+      - name: Install PulseHunter CI client
+        run: python -m pip install 'git+https://github.com/MdFahimBashar/PulseHunter.git@main'
+      - name: Gate build on device validation
+        env:
+          PULSEHUNTER_URL: ${{ vars.PULSEHUNTER_URL }}
+          PULSEHUNTER_DEVICE_ID: ${{ vars.PULSEHUNTER_DEVICE_ID }}
+          SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          pulsehunter-ci run \
+            --server "$PULSEHUNTER_URL" \
+            --suite smoke \
+            --device-id "$PULSEHUNTER_DEVICE_ID" \
+            --repository "$GITHUB_REPOSITORY" \
+            --commit "$SOURCE_SHA" \
+            --ref "$GITHUB_REF" \
+            --build-id "$GITHUB_RUN_ID" \
+            --wait --timeout 120

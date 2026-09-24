@@ -50,9 +50,19 @@ class TestSuiteRead(ApiModel):
     created_at: datetime
 
 
+class RunSource(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    repository: str | None = Field(default=None, min_length=1, max_length=256)
+    commit_sha: str = Field(pattern=r"^[0-9a-fA-F]{7,64}$")
+    ref: str | None = Field(default=None, min_length=1, max_length=256)
+    build_id: str | None = Field(default=None, min_length=1, max_length=256)
+
+
 class RunCreate(BaseModel):
     test_suite_id: uuid.UUID
     device_ids: list[uuid.UUID] | None = Field(default=None, min_length=1, max_length=100)
+    source: RunSource | None = None
 
     @field_validator("device_ids")
     @classmethod
@@ -81,6 +91,7 @@ class TestRunRead(ApiModel):
     started_at: datetime | None
     completed_at: datetime | None
     counts: RunCounts
+    source: RunSource | None = None
 
 
 class TestJobRead(ApiModel):

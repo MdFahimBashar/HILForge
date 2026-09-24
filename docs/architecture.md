@@ -9,6 +9,12 @@ own execution. Today those agents are Python simulators. A physical agent can
 implement the same registration, heartbeat, health, and execution HTTP
 contract.
 
+The `pulsehunter-ci` command is an HTTP client of this same API, not another
+scheduler. It resolves a suite slug, creates a run, polls the durable run state,
+and turns the terminal result into a process exit code. Optional source
+repository/commit/ref/build metadata is validated by the API and stored on the
+run in PostgreSQL; Redis remains a task broker only.
+
 ```mermaid
 sequenceDiagram
     actor User
@@ -133,7 +139,8 @@ behavior from Redis/Celery.
 
 - `devices`: stable identity, endpoint, capabilities, heartbeat, state
 - `test_suites`: predefined validation definition and description
-- `test_runs`: one requested suite execution and aggregate state
+- `test_runs`: one requested suite execution, aggregate state, and optional
+  caller-supplied source commit context
 - `test_jobs`: one run/device assignment with attempts, lease, result, logs,
   errors, and timing
 

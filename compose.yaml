@@ -83,7 +83,7 @@ services:
     <<: *app
     command: ["uvicorn", "pulsehunter.main:app", "--host", "0.0.0.0", "--port", "8000"]
     ports:
-      - "127.0.0.1:${PULSEHUNTER_API_PORT:-8000}:8000"
+      - "${PULSEHUNTER_API_BIND:-127.0.0.1}:${PULSEHUNTER_API_PORT:-8000}:8000"
     depends_on:
       migrate:
         condition: service_completed_successfully

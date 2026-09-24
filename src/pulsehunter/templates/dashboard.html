@@ -12,33 +12,33 @@
   </div>
   <div class="intro-status" aria-label="Lab status">
     <span class="intro-status-icon" aria-hidden="true"></span>
-    <div><strong>{{ device_counts.online }} devices ready</strong><span>Heartbeat monitoring active</span></div>
+    <div><strong><span id="ready-count">{{ device_counts.online }}</span> devices ready</strong><span>Heartbeat monitoring active</span></div>
   </div>
 </section>
 
 <section class="fleet-summary" aria-label="Device fleet summary">
-  <article class="summary-metric summary-total"><span class="metric-label">Fleet</span><strong>{{ device_counts.total }}</strong><span class="metric-note">registered</span></article>
-  <article class="summary-metric summary-online"><span class="metric-label"><i class="metric-dot"></i>Available</span><strong>{{ device_counts.online }}</strong><span class="metric-note">ready for work</span></article>
-  <article class="summary-metric summary-busy"><span class="metric-label"><i class="metric-dot"></i>In use</span><strong>{{ device_counts.busy }}</strong><span class="metric-note">reserved</span></article>
-  <article class="summary-metric summary-offline"><span class="metric-label"><i class="metric-dot"></i>Offline</span><strong>{{ device_counts.offline }}</strong><span class="metric-note">needs attention</span></article>
+  <article class="summary-metric summary-total"><span class="metric-label">Fleet</span><strong id="fleet-count">{{ device_counts.total }}</strong><span class="metric-note">registered</span></article>
+  <article class="summary-metric summary-online"><span class="metric-label"><i class="metric-dot"></i>Available</span><strong id="online-count">{{ device_counts.online }}</strong><span class="metric-note">ready for work</span></article>
+  <article class="summary-metric summary-busy"><span class="metric-label"><i class="metric-dot"></i>In use</span><strong id="busy-count">{{ device_counts.busy }}</strong><span class="metric-note">reserved</span></article>
+  <article class="summary-metric summary-offline"><span class="metric-label"><i class="metric-dot"></i>Offline</span><strong id="offline-count">{{ device_counts.offline }}</strong><span class="metric-note">needs attention</span></article>
 </section>
 
 <section class="launch-panel" aria-labelledby="launch-title">
   <div class="section-heading launch-heading">
     <div><p class="eyebrow">New validation</p><h2 id="launch-title">Configure a run</h2></div>
-    <span class="available-caption">{{ available_devices|length }} available now</span>
+    <span class="available-caption"><span id="available-count">{{ available_devices|length }}</span> available now</span>
   </div>
   <form id="run-form" data-testid="validation-form" novalidate>
     <div class="launch-grid">
       <div class="run-configuration">
         <label class="field-label" for="suite">Test suite</label>
-        <div class="select-wrap"><select name="suite" id="suite" data-testid="suite-select">{% for suite in suites %}<option value="{{ suite.id }}">{{ suite.name }}</option>{% endfor %}</select></div>
+        <div class="select-wrap"><select name="suite" id="suite" data-testid="suite-select">{% for suite in suites %}<option value="{{ suite.id }}" data-suite-slug="{{ suite.slug }}">{{ suite.name }}</option>{% endfor %}</select></div>
         <fieldset class="scope-fieldset">
           <legend class="field-label">Execution scope</legend>
           <div class="scope-options">
             <label class="scope-option">
               <input type="radio" name="scope" value="all" checked>
-              <span class="scope-control"><span class="scope-icon scope-all" aria-hidden="true"></span><span><strong>All available</strong><small>Run on every ready device</small></span><i aria-hidden="true"></i></span>
+              <span class="scope-control"><span class="scope-icon scope-all" aria-hidden="true"></span><span><strong>All compatible</strong><small>Run on every ready device supporting this suite</small></span><i aria-hidden="true"></i></span>
             </label>
             <label class="scope-option">
               <input type="radio" name="scope" value="selected">
@@ -47,7 +47,7 @@
           </div>
         </fieldset>
         <div class="launch-action">
-          <button class="primary-button" type="submit" data-testid="run-submit" {% if not available_devices %}disabled{% endif %}><span class="button-label">Run on {{ available_devices|length }} available devices</span><span class="button-arrow" aria-hidden="true">→</span></button>
+          <button class="primary-button" type="submit" data-testid="run-submit" {% if not available_devices %}disabled{% endif %}><span class="button-label">Select a suite</span><span class="button-arrow" aria-hidden="true">→</span></button>
           <p id="run-message" class="form-message" role="status" aria-live="polite"></p>
         </div>
       </div>
@@ -60,9 +60,9 @@
         <div class="target-list">
           {% for device in devices %}
           <label class="target-device {% if device.status.value != 'online' %}is-unavailable{% endif %}">
-            <input class="device-checkbox" type="checkbox" value="{{ device.id }}" data-device-name="{{ device.name }}" {% if device.status.value != 'online' %}disabled{% endif %}>
+            <input class="device-checkbox" type="checkbox" value="{{ device.id }}" data-device-name="{{ device.name }}" data-device-status="{{ device.status.value }}" data-supported-suites="{{ (device.capabilities.get('supported_suites') or (['smoke'] if device.device_type == 'simulator' else []))|join(',') }}" {% if device.status.value != 'online' %}disabled{% endif %}>
             <span class="custom-checkbox" aria-hidden="true"></span>
-            <span class="target-identity"><strong>{{ device.name }}</strong><small>{{ device.capabilities.get('mode', device.device_type)|title }} profile</small></span>
+            <span class="target-identity"><strong>{{ device.name }} <span class="device-kind">{{ 'SIMULATOR' if device.capabilities.get('simulated', device.device_type == 'simulator') else 'PHYSICAL' }}</span></strong><small>{{ device.device_type }} · {{ (device.capabilities.get('supported_suites') or (['smoke'] if device.device_type == 'simulator' else []))|join(', ') or 'No suites advertised' }}</small></span>
             <span class="target-state state-{{ device.status.value }}"><i></i>{{ device.status.value|replace('_', ' ')|title }}</span>
           </label>
           {% else %}<div class="empty-compact">No devices have registered yet.</div>{% endfor %}
@@ -76,12 +76,12 @@
   <div class="section-heading"><div><p class="eyebrow">Live inventory</p><h2 id="fleet-title">Device fleet</h2></div><span class="section-caption">Heartbeat timeout · 10 seconds</span></div>
   <div class="table-shell">
     <table class="data-table device-table">
-      <thead><tr><th>Device</th><th>Profile</th><th>Status</th><th>Last heartbeat</th><th>Endpoint</th></tr></thead>
+      <thead><tr><th>Device</th><th>Supported suites</th><th>Status</th><th>Last heartbeat</th><th>Endpoint</th></tr></thead>
       <tbody>
       {% for device in devices %}
-        <tr>
-          <td data-label="Device"><div class="device-name"><span class="device-glyph" aria-hidden="true"></span><div><strong>{{ device.name }}</strong><small>{{ device.device_type }}</small></div></div></td>
-          <td data-label="Profile"><span class="profile-label">{{ device.capabilities.get('mode', 'standard')|title }}</span></td>
+        <tr data-device-id="{{ device.id }}">
+          <td data-label="Device"><div class="device-name"><span class="device-glyph" aria-hidden="true"></span><div><strong>{{ device.name }} <span class="device-kind">{{ 'SIMULATOR' if device.capabilities.get('simulated', device.device_type == 'simulator') else 'PHYSICAL' }}</span></strong><small>{{ device.device_type }}{% if device.capabilities.get('mode') %} · {{ device.capabilities.mode }}{% endif %}</small></div></div></td>
+          <td data-label="Supported suites"><span class="profile-label">{{ (device.capabilities.get('supported_suites') or (['smoke'] if device.device_type == 'simulator' else []))|join(', ') or 'None advertised' }}</span></td>
           <td data-label="Status">{{ status_badge(device.status) }}</td>
           <td data-label="Last heartbeat">{{ relative_time(device.last_heartbeat_at) }}</td>
           <td data-label="Endpoint"><code class="endpoint">{{ device.endpoint_url|replace('http://', '') }}</code></td>

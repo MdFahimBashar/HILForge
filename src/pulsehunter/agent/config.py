@@ -46,5 +46,5 @@ class AgentSettings(BaseSettings):
         return self.outcome_script.split(",")
 
     @property
-    def registration_capabilities(self) -> dict[str, str | bool]:
-        return {"simulated": True, "mode": self.mode.value}
+    def registration_capabilities(self) -> dict[str, str | bool | list[str]]:
+        return {"simulated": True, "mode": self.mode.value, "supported_suites": ["smoke"]}

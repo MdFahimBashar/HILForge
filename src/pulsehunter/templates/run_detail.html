@@ -55,11 +55,29 @@
             {% else %}<span class="muted-summary">No result payload</span>{% endif %}
           </div>
         </div>
+        {% if job.result and job.result.get('system') and job.result.get('cpu') %}
+        {% set result = job.result %}
+        <section class="host-results" aria-label="Physical host health results">
+          <div class="host-results-heading"><strong>Physical host health</strong><span>{{ result.checks_passed }}/{{ result.checks_total }} checks passed</span></div>
+          <div class="host-results-grid">
+            <div><span>System</span><strong>{{ result.system.hostname }}</strong><small>{{ result.system.os }} {{ result.system.release }} · {{ result.system.architecture }}</small></div>
+            <div><span>CPU</span><strong>{{ result.cpu.physical_cores }} physical / {{ result.cpu.logical_cores }} logical</strong><small>Processor cores</small></div>
+            <div><span>Memory</span><strong>{{ result.memory.total_bytes|format_bytes }} total</strong><small>{{ result.memory.available_bytes|format_bytes }} available · integrity {{ 'passed' if result.memory.integrity.sha256_match else 'failed' }}</small></div>
+            <div><span>Storage</span><strong>{{ result.disk.total_bytes|format_bytes }} total</strong><small>{{ result.disk.free_bytes|format_bytes }} free · integrity {{ 'passed' if result.disk.integrity.sha256_match else 'failed' }} in {{ '%.1f'|format(result.disk.integrity.duration_ms) }} ms</small></div>
+            <div><span>Uptime</span><strong>{{ result.uptime_seconds|format_uptime }}</strong><small>Since last boot</small></div>
+            <div><span>Battery</span>{% if result.battery and result.battery.available %}<strong>{{ result.battery.percent }}%</strong><small>{{ 'Charging' if result.battery.charging else 'Not charging' }}</small>{% else %}<strong>Unavailable</strong><small>No battery reported</small>{% endif %}</div>
+          </div>
+          <div class="host-network"><span>Primary network addresses</span>{% for interface, addresses in result.network.interfaces|primary_network_addresses %}<div><strong>{{ interface }}</strong><span>{{ addresses|join(', ') }}</span></div>{% else %}<p>No Wi-Fi or Ethernet address available. See Technical details for all interfaces.</p>{% endfor %}</div>
+        </section>
+        {% endif %}
         <details class="technical-details">
           <summary><span>Technical details</span><i aria-hidden="true"></i></summary>
           <div class="details-content">
+            {% if job.result and job.result.get('network') %}
+            <section class="result-fields network-details"><h3>All network interfaces</h3><dl>{% for interface, addresses in job.result.network.interfaces.items() %}<div><dt>{{ interface }}</dt><dd>{{ addresses|join(', ') }}</dd></div>{% endfor %}</dl></section>
+            {% endif %}
             {% if job.result %}
-            <section class="result-fields"><h3>Result</h3><dl>{% for key, value in job.result.items() %}<div><dt>{{ key|replace('_', ' ')|title }}</dt><dd>{% if value is sameas true %}<span class="boolean-true">Yes</span>{% elif value is sameas false %}<span class="boolean-false">No</span>{% else %}{{ value }}{% endif %}</dd></div>{% endfor %}</dl></section>
+            {% if not (job.result.get('system') and job.result.get('cpu')) %}<section class="result-fields"><h3>Result</h3><dl>{% for key, value in job.result.items() %}<div><dt>{{ key|replace('_', ' ')|title }}</dt><dd>{% if value is sameas true %}<span class="boolean-true">Yes</span>{% elif value is sameas false %}<span class="boolean-false">No</span>{% else %}{{ value }}{% endif %}</dd></div>{% endfor %}</dl></section>{% endif %}
             {% endif %}
             {% if job.logs %}
             <section class="job-logs"><h3>Execution log</h3><ol>{% for line in job.logs %}<li><span>{{ '%02d'|format(loop.index) }}</span><code>{{ line }}</code></li>{% endfor %}</ol></section>

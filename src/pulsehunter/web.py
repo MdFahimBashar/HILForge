@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import uuid
+from ipaddress import ip_address
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -24,6 +25,7 @@ from pulsehunter.schemas.api import (
 )
 from pulsehunter.services.devices import (
     DeviceNotFoundError,
+    mark_stale_devices_offline,
     record_heartbeat,
     register_device,
 )
@@ -42,6 +44,52 @@ logger = logging.getLogger(__name__)
 settings = get_settings()
 router = APIRouter()
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
+
+
+def format_bytes(value: int | float) -> str:
+    return f"{value / (1024**3):,.1f} GiB"
+
+
+def format_uptime(value: int | float) -> str:
+    minutes = int(value // 60)
+    days, remainder = divmod(minutes, 24 * 60)
+    hours, minutes = divmod(remainder, 60)
+    return f"{days}d {hours}h {minutes}m" if days else f"{hours}h {minutes}m"
+
+
+def primary_network_addresses(interfaces: dict[str, list[str]]) -> list[tuple[str, list[str]]]:
+    useful: list[tuple[int, str, list[str]]] = []
+    for name, addresses in interfaces.items():
+        label = name.casefold()
+        if label.startswith(("wi-fi", "wifi", "wlan", "wl")):
+            priority = 0
+        elif label.startswith(("ethernet", "eth", "en")):
+            priority = 1
+        else:
+            continue
+        if any(part in label for part in ("virtual", "vethernet", "bluetooth", "loopback")):
+            continue
+        routed: list[str] = []
+        for address in addresses:
+            try:
+                parsed = ip_address(address.split("%", 1)[0])
+            except ValueError:
+                continue
+            if not (
+                parsed.is_link_local
+                or parsed.is_loopback
+                or parsed.is_multicast
+                or parsed.is_unspecified
+            ):
+                routed.append(address)
+        if routed:
+            useful.append((priority, name, routed))
+    return [(name, addresses) for _, name, addresses in sorted(useful)]
+
+
+templates.env.filters["format_bytes"] = format_bytes
+templates.env.filters["format_uptime"] = format_uptime
+templates.env.filters["primary_network_addresses"] = primary_network_addresses
 
 
 @router.post(
@@ -147,7 +195,12 @@ def get_run_jobs(run_id: uuid.UUID, session: Session = Depends(get_db)) -> list[
 
 @router.get("/", response_class=HTMLResponse, include_in_schema=False)
 def dashboard(request: Request, session: Session = Depends(get_db)) -> HTMLResponse:
+    mark_stale_devices_offline(
+        session,
+        timeout_seconds=settings.heartbeat_timeout_seconds,
+    )
     devices = list(session.scalars(select(Device).order_by(Device.name)).all())
+    session.commit()
     runs = list_runs(session, limit=20)
     suites = list(session.scalars(select(TestSuite).order_by(TestSuite.name)).all())
     device_counts = {

@@ -6,14 +6,36 @@ import logging
 import uuid
 from dataclasses import dataclass
 from time import monotonic
+from typing import Any, Protocol
 
 import httpx
+from pydantic import HttpUrl
 
 from pulsehunter.agent.config import AgentMode, AgentSettings
 from pulsehunter.schemas.agent import AgentExecutionRequest, AgentExecutionResponse, AgentOutcome
 from pulsehunter.schemas.api import DeviceRead
 
 logger = logging.getLogger(__name__)
+
+
+class RegistrationSettings(Protocol):
+    @property
+    def name(self) -> str: ...
+
+    @property
+    def device_type(self) -> str: ...
+
+    @property
+    def public_url(self) -> HttpUrl: ...
+
+    @property
+    def server_url(self) -> HttpUrl: ...
+
+    @property
+    def heartbeat_interval_seconds(self) -> float: ...
+
+    @property
+    def registration_capabilities(self) -> dict[str, Any]: ...
 
 
 class TransientSimulationError(RuntimeError):
@@ -100,7 +122,7 @@ class AgentEngine:
 class AgentControlLoop:
     """Registers the process as a device and maintains its heartbeat."""
 
-    def __init__(self, settings: AgentSettings) -> None:
+    def __init__(self, settings: RegistrationSettings) -> None:
         self.settings = settings
         self.device_id: uuid.UUID | None = None
         self._stop = asyncio.Event()
@@ -136,10 +158,7 @@ class AgentControlLoop:
                 "name": self.settings.name,
                 "device_type": self.settings.device_type,
                 "endpoint_url": str(self.settings.public_url).rstrip("/"),
-                "capabilities": {
-                    "simulated": True,
-                    "mode": self.settings.mode.value,
-                },
+                "capabilities": self.settings.registration_capabilities,
             },
         )
         response.raise_for_status()

@@ -5,9 +5,8 @@
 PulseHunter coordinates validation work; it does not contain hardware-specific
 test code in its control plane. The API owns user-facing requests and durable
 resource allocation, workers own asynchronous orchestration, and device agents
-own execution. Today those agents are Python simulators. A physical agent can
-implement the same registration, heartbeat, health, and execution HTTP
-contract.
+own execution. The three Python simulators and the optional Windows host agent
+use the same registration, heartbeat, health, and execution HTTP contract.
 
 The `pulsehunter-ci` command is an HTTP client of this same API, not another
 scheduler. It resolves a suite slug, creates a run, polls the durable run state,
@@ -75,6 +74,14 @@ It registers by stable name, receives a server UUID, sends heartbeats, and
 accepts one execution contract. Healthy, slow, and unreliable behavior comes
 from configuration, not different codebases.
 
+The optional Windows host agent is a separate FastAPI process running directly
+on the laptop. It advertises a LAN URL, registers as `windows-host` with
+`simulated=false`, and accepts only the predefined `host-health` suite. Its
+memory and temporary-file integrity tests are fixed-size; it cannot execute
+arbitrary server commands. The same database-backed reservation, idempotent
+job ID, retry, and heartbeat-offline mechanisms apply. It needs explicit
+device selection because capability-aware scheduling is not implemented.
+
 ## State machines
 
 ```mermaid
@@ -116,6 +123,8 @@ a worker is killed before writing an outcome, the reconciler converts an
 expired lease into a retry or a terminal failure when the attempt budget is
 exhausted. Celery's hard task limit and Redis visibility timeout are configured
 longer than the normal device call.
+Windows-host calls use a separate 10-second HTTP timeout and corresponding
+lease/hard-limit budget; simulator calls retain their 3-second timeout.
 
 ## Delivery and idempotency model
 
@@ -150,7 +159,8 @@ run deletion to its jobs.
 
 ## Security and production gaps
 
-The Compose stack binds only the API to host loopback, but internal registration
+The Compose stack binds only the API to host loopback by default; trusted-LAN
+testing can temporarily widen that host binding. Internal registration
 and execution have no authentication. Agent URLs are trusted and therefore an
 untrusted registrant could cause server-side requests to arbitrary locations.
 A production design needs authenticated agent identity, an endpoint allowlist

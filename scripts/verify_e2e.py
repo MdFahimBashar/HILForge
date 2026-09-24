@@ -44,10 +44,17 @@ def wait_for_devices(base_url: str, timeout: float) -> list[dict[str, Any]]:
 def verify(base_url: str, timeout: float) -> dict[str, Any]:
     devices = wait_for_devices(base_url, timeout)
     suites = request_json(base_url, "/test-suites")
-    if not suites:
-        raise RuntimeError("No seeded test suite is available")
+    suite = next((item for item in suites if item["slug"] == "smoke"), None)
+    if suite is None:
+        raise RuntimeError("The seeded smoke test suite is not available")
 
-    run = request_json(base_url, "/runs", body={"test_suite_id": suites[0]["id"]})
+    simulator_names = {"sim-healthy", "sim-slow", "sim-unreliable"}
+    simulator_ids = [device["id"] for device in devices if device["name"] in simulator_names]
+    run = request_json(
+        base_url,
+        "/runs",
+        body={"test_suite_id": suite["id"], "device_ids": simulator_ids},
+    )
     run_id = run["id"]
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
@@ -60,7 +67,7 @@ def verify(base_url: str, timeout: float) -> dict[str, Any]:
 
     jobs = request_json(base_url, f"/runs/{run_id}/jobs")
     by_device = {job["device_name"]: job for job in jobs}
-    expected_names = {"sim-healthy", "sim-slow", "sim-unreliable"}
+    expected_names = simulator_names
     if set(by_device) != expected_names:
         raise AssertionError(f"Expected jobs for {expected_names}, received {set(by_device)}")
     assert run["status"] == "failed", run

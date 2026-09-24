@@ -23,6 +23,7 @@ asynchronously, survive temporary failures, and preserve results for engineers.
 
 - registration, heartbeats, online/offline/busy state, and exclusive reservation
 - healthy, slow, and unreliable standalone device agents
+- optional Windows host agent with predefined real machine checks
 - PostgreSQL-backed test suites, runs, jobs, results, logs, errors, and timings
 - Redis/Celery task delivery with four concurrent worker slots
 - bounded retries with exponential backoff, HTTP timeouts, and worker leases
@@ -45,7 +46,9 @@ flowchart LR
     W --> D1["Healthy agent"]
     W --> D2["Slow agent"]
     W --> D3["Unreliable agent"]
+    W --> H["Windows host agent (optional)"]
     D1 & D2 & D3 -->|"register + heartbeat"| A
+    H -->|"register + heartbeat"| A
     B["Celery Beat\nreconciler + liveness"] --> P
     B --> R
 ```
@@ -53,9 +56,9 @@ flowchart LR
 PostgreSQL is authoritative. Redis contains task messages, not permanent job
 results. A Celery message carries only a job UUID; the worker locks and reads
 the current state from PostgreSQL before acting. Device agents are separate
-HTTP processes, which preserves the same boundary a future physical agent can
-implement. See [docs/architecture.md](docs/architecture.md) for the detailed
-state and failure model.
+HTTP processes. The optional Windows host agent implements that same boundary
+outside Docker. See [docs/architecture.md](docs/architecture.md) for the
+detailed state and failure model.
 
 ## Quick start
 
@@ -95,7 +98,8 @@ status.
 From PowerShell, the all-device API flow is:
 
 ```powershell
-$suite = (Invoke-RestMethod http://127.0.0.1:8000/test-suites)[0]
+$suite = Invoke-RestMethod http://127.0.0.1:8000/test-suites |
+  Where-Object slug -eq 'smoke' | Select-Object -First 1
 $body = @{ test_suite_id = $suite.id } | ConvertTo-Json
 $run = Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8000/runs `
   -ContentType 'application/json' -Body $body
@@ -142,6 +146,16 @@ trusted self-hosted runner on the lab network. PulseHunter has no agent/user
 authentication or TLS in this MVP; source context is caller-supplied, not
 cryptographically verified. Do not expose its API to an untrusted CI runner or
 the public internet.
+
+## Physical Windows host agent
+
+An optional agent can run directly on a trusted-LAN Windows laptop and perform
+real, bounded system and integrity checks. It registers as `windows-host` with
+`simulated=false`; the three Docker simulators remain available. Use the
+dedicated `host-health` suite with an explicitly selected laptop device. See
+[Windows host agent setup](docs/windows-host-agent.md) for exact Python,
+firewall, startup, and manual validation commands. The physical-laptop E2E
+remains a manual check, not a GitHub Actions claim.
 
 ## API
 
@@ -199,7 +213,7 @@ docker compose up --build --detach --wait
 python scripts/verify_e2e.py --timeout 90
 ```
 
-The one-shot `migrate` service applies migrations and seeds the default suite
+The one-shot `migrate` service applies migrations and seeds both predefined suites
 during Compose startup. With the Compose database running, verify schema drift
 and seed idempotency from the same container network:
 
@@ -232,7 +246,9 @@ docker compose run --rm migrate python -m pulsehunter.db.seed
 - Agent idempotency is in memory and is lost when an agent restarts.
 - Cancellation, priorities, per-capability scheduling, artifacts, and log
   streaming are not implemented.
-- The seeded suite is a predefined simulated smoke test, not a custom test DSL.
+- The seeded suites are predefined simulator and Windows-host checks, not a
+  custom test DSL. There is no capability-aware scheduling; select the Windows
+  host explicitly for `host-health`.
 - Celery Beat should have exactly one instance; multiple schedulers can cause
   harmless duplicate publications but add noise.
 
@@ -244,7 +260,7 @@ These are planned directions, not implemented features:
 - endpoint allowlisting or service discovery for device agents
 - capability-aware scheduling, priorities, and cancellation
 - artifact retention, log streaming, metrics, and tracing
-- durable agent-side idempotency and physical-device integrations
+- durable agent-side idempotency and additional physical-device integrations
 
 ## Documentation and security
 

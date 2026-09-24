@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
 
     job_timeout_seconds: float = Field(default=4.0, gt=0)
+    host_job_timeout_seconds: float = Field(default=10.0, gt=0)
     job_max_attempts: int = Field(default=3, ge=1, le=10)
     retry_backoff_seconds: float = Field(default=1.0, gt=0)
     retry_backoff_max_seconds: float = Field(default=10.0, gt=0)
@@ -47,7 +48,14 @@ class Settings(BaseSettings):
 
     @property
     def worker_hard_time_limit_seconds(self) -> int:
-        return max(10, int(self.job_timeout_seconds + self.job_lease_grace_seconds + 5))
+        return max(
+            10,
+            int(
+                max(self.job_timeout_seconds, self.host_job_timeout_seconds)
+                + self.job_lease_grace_seconds
+                + 5
+            ),
+        )
 
     @property
     def broker_visibility_timeout_seconds(self) -> int:

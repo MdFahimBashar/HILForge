@@ -37,6 +37,7 @@ class ClaimedJob:
     suite_slug: str
     suite_definition: dict[str, Any]
     attempts: int
+    timeout_seconds: float
 
 
 class JobExecutor:
@@ -64,14 +65,14 @@ class JobExecutor:
             run_id=claim.run_id,
             suite_slug=claim.suite_slug,
             suite_definition=claim.suite_definition,
-            deadline=utc_now() + timedelta(seconds=self._settings.job_timeout_seconds),
+            deadline=utc_now() + timedelta(seconds=claim.timeout_seconds),
         )
         started = monotonic()
         try:
             response = self._device_client.execute(
                 claim.endpoint_url,
                 request,
-                timeout_seconds=self._settings.job_timeout_seconds,
+                timeout_seconds=claim.timeout_seconds,
             )
         except DeviceTimeoutError as exc:
             return self._handle_retryable_failure(
@@ -140,10 +141,13 @@ class JobExecutor:
             transition_job(job, JobStatus.RUNNING, now=now)
             job.attempts += 1
             job.next_attempt_at = None
+            timeout_seconds = (
+                self._settings.host_job_timeout_seconds
+                if job.device.device_type == "windows-host"
+                else self._settings.job_timeout_seconds
+            )
             job.lease_expires_at = now + timedelta(
-                seconds=(
-                    self._settings.job_timeout_seconds + self._settings.job_lease_grace_seconds
-                )
+                seconds=timeout_seconds + self._settings.job_lease_grace_seconds
             )
             job.worker_task_id = worker_task_id
             recompute_run_status(session, job.test_run_id, now=now)
@@ -154,6 +158,7 @@ class JobExecutor:
                 suite_slug=job.test_run.test_suite.slug,
                 suite_definition=dict(job.test_run.test_suite.definition),
                 attempts=job.attempts,
+                timeout_seconds=timeout_seconds,
             )
             session.commit()
             return claim

@@ -53,14 +53,14 @@ def settings(*, max_attempts: int = 3) -> Settings:
     )
 
 
-def queued_job(factory: sessionmaker[Session]) -> uuid.UUID:
+def queued_job(factory: sessionmaker[Session], *, device_type: str = "simulator") -> uuid.UUID:
     with factory() as session:
         suite = seed_default_suite(session)
         device = register_device(
             session,
             DeviceRegister(
                 name="bench-a",
-                device_type="simulator",
+                device_type=device_type,
                 endpoint_url="http://bench-a:9000",
                 capabilities={},
             ),
@@ -124,6 +124,33 @@ class TransientThenPassingClient(PassingClient):
             request,
             timeout_seconds=timeout_seconds,
         )
+
+
+class RecordingPassingClient(PassingClient):
+    def __init__(self, factory: sessionmaker[Session]) -> None:
+        self.factory = factory
+        self.timeout_seconds: float | None = None
+        self.deadline_seconds: float | None = None
+        self.lease_seconds: float | None = None
+
+    def execute(
+        self,
+        endpoint_url: str,
+        request: AgentExecutionRequest,
+        *,
+        timeout_seconds: float,
+    ) -> AgentExecutionResponse:
+        self.timeout_seconds = timeout_seconds
+        self.deadline_seconds = (request.deadline - utc_now()).total_seconds()
+        with self.factory() as session:
+            job = session.get(JobModel, request.job_id)
+            assert job is not None and job.lease_expires_at is not None
+            lease = job.lease_expires_at
+            now = utc_now()
+            if lease.tzinfo is None:  # SQLite strips timezone information in this unit test.
+                lease = lease.replace(tzinfo=now.tzinfo)
+            self.lease_seconds = (lease - now).total_seconds()
+        return super().execute(endpoint_url, request, timeout_seconds=timeout_seconds)
 
 
 def make_due(factory: sessionmaker[Session], job_id: uuid.UUID) -> None:
@@ -224,3 +251,21 @@ def test_timeout_is_bounded_and_becomes_terminal(
         assert job.test_run.status == RunStatus.FAILED
         assert job.completed_at is not None
     assert len(published) == 1
+
+
+def test_windows_host_uses_separate_timeout_without_changing_simulator_timeout(
+    session_factory: sessionmaker[Session],
+) -> None:
+    host_job_id = queued_job(session_factory, device_type="windows-host")
+    host_client = RecordingPassingClient(session_factory)
+    configured = settings()
+    executor = JobExecutor(session_factory, host_client, configured, lambda _job, _delay: None)
+
+    assert executor.execute(host_job_id, worker_task_id="host-task") == "passed"
+    assert host_client.timeout_seconds == configured.host_job_timeout_seconds
+    assert host_client.deadline_seconds == pytest.approx(
+        configured.host_job_timeout_seconds, abs=0.5
+    )
+    assert host_client.lease_seconds is not None
+    assert host_client.lease_seconds > configured.host_job_timeout_seconds
+    assert configured.worker_hard_time_limit_seconds > configured.host_job_timeout_seconds

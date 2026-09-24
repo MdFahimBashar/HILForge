@@ -1,3 +1,5 @@
+<img src="src/pulsehunter/static/pulsehunter-mark-512.png" alt="PulseHunter logo" width="48" height="48">
+
 # PulseHunter
 
 **Distributed Device Validation Platform**

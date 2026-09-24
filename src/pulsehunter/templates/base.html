@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
   <title>{% block title %}PulseHunter{% endblock %}</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="/static/pulsehunter-favicon-64.png">
+  <link rel="shortcut icon" type="image/x-icon" href="/static/pulsehunter-favicon.ico">
   <link rel="stylesheet" href="/static/styles.css">
   <script src="/static/app.js" defer></script>
   {% block head %}{% endblock %}
@@ -14,7 +16,7 @@
   <header class="app-header">
     <div class="header-inner">
       <a class="brand" href="/" aria-label="PulseHunter dashboard">
-        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <img class="brand-mark" src="/static/pulsehunter-mark-512.png" width="30" height="30" alt="">
         <span class="brand-name">PulseHunter</span>
       </a>
       <nav class="primary-nav" aria-label="Primary navigation">

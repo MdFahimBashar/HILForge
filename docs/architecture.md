@@ -47,7 +47,11 @@ sequenceDiagram
 The API validates input, reports dependency health, registers devices,
 processes heartbeats, reserves fresh online devices, persists a run and its
 jobs in one transaction, publishes job UUIDs, and serves REST/HTML reads. It
-does not execute validations in request handlers.
+does not execute validations in request handlers. The dashboard uses the
+existing run API with explicit device IDs and filters available devices by
+their advertised supported suites; this is UI compatibility filtering, not
+backend capability-aware scheduling. It refreshes device state from the API
+so heartbeat-driven offline and reconnect transitions remain authoritative.
 
 ### PostgreSQL
 
@@ -81,6 +85,10 @@ memory and temporary-file integrity tests are fixed-size; it cannot execute
 arbitrary server commands. The same database-backed reservation, idempotent
 job ID, retry, and heartbeat-offline mechanisms apply. It needs explicit
 device selection because capability-aware scheduling is not implemented.
+The agent's registration, heartbeat, LAN execution, persisted host-health
+result, and offline/reconnect behavior have been manually verified on a
+physical Windows laptop. Automated CI covers the agent contract and Docker
+simulators, not physical hardware.
 
 ## State machines
 

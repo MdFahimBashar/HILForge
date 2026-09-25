@@ -8,9 +8,8 @@ be on a trusted LAN; this MVP has no agent authentication or TLS.
 
 ## Desktop setup
 
-From a checkout containing the host-agent milestone, open PowerShell in the
-repository root. The API normally binds to localhost. For this trusted-LAN
-test, temporarily publish it on the desktop's LAN interface:
+From the repository root, open PowerShell. The API normally binds to localhost.
+For trusted-LAN use, temporarily publish it on the desktop's LAN interface:
 
 ```powershell
 $env:PULSEHUNTER_API_BIND = '0.0.0.0'
@@ -19,7 +18,9 @@ docker compose up --build --detach --wait
 
 Confirm the laptop can reach `http://192.168.30.198:8000/health`. Replace the
 example IP if the desktop address changes. Do not expose port 8000 to the
-public internet. After testing, remove the override and recreate the API:
+public internet. After testing, remove the override and recreate the API. If
+`.env` also sets `PULSEHUNTER_API_BIND=0.0.0.0`, restore its localhost default
+first:
 
 ```powershell
 Remove-Item Env:PULSEHUNTER_API_BIND
@@ -28,9 +29,8 @@ docker compose up --detach --wait
 
 ## Laptop setup
 
-Once this milestone is approved and pushed, clone it on the laptop (or copy
-the current uncommitted checkout there for a pre-commit manual test). The
-laptop has Python 3.14.7; run these commands in PowerShell:
+Clone PulseHunter on the laptop. Python 3.14 is required; run these commands
+in PowerShell:
 
 ```powershell
 git clone https://github.com/MdFahimBashar/PulseHunter.git
@@ -39,8 +39,6 @@ py -3.14 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install --upgrade pip
 .\.venv\Scripts\python.exe -m pip install ".[host-agent]"
 ```
-
-If you copied the uncommitted checkout, skip `git clone` and `Set-Location`.
 
 Check that the active network profile is `Private`:
 
@@ -81,7 +79,14 @@ On the desktop, confirm that the worker can reach the agent through the LAN:
 docker compose exec -T worker python -c "import urllib.request; print(urllib.request.urlopen('http://192.168.30.83:9000/health', timeout=5).status)"
 ```
 
-Then select **only the laptop** for the dedicated `host-health` suite:
+On the desktop dashboard at `http://127.0.0.1:8000/`, choose `host-health`.
+The device list shows the laptop as **PHYSICAL** and offers only online hosts
+advertising that suite. Select the laptop, start the run, and open the result
+page to see the real host checks. The dashboard reflects online, offline, and
+reconnected states from server heartbeats. Raw payload and logs remain under
+Technical details.
+
+Alternatively, select **only the laptop** with the CI client:
 
 ```powershell
 $device = Invoke-RestMethod http://127.0.0.1:8000/devices |
@@ -92,16 +97,18 @@ docker compose exec -T api pulsehunter-ci run --server http://127.0.0.1:8000 `
 ```
 
 The command prints the run ID and exits `0` only if the host checks pass. Open
-`http://127.0.0.1:8000/` and select that run to inspect the persisted result.
+that run on the dashboard to inspect the persisted result.
 The agent reports OS/host/architecture, CPU counts, RAM, disk, uptime, IP
 addresses, optional battery information, and bounded memory and temporary-file
 integrity results. Hostname and IP information are persisted in PostgreSQL;
 use this only on a trusted network.
 
 Always select the laptop explicitly. PulseHunter does not yet match suite
-capabilities to devices: an all-device `host-health` run would also assign the
-simulators, whose results are not physical-host evidence. The host agent
-rejects other suite definitions rather than running arbitrary instructions.
+capabilities in its API: an API or CLI all-device `host-health` run would also
+assign the simulators, whose results are not physical-host evidence. The
+dashboard filters supported suites before submitting explicit device IDs. The
+host agent rejects other suite definitions rather than running arbitrary
+instructions.
 The existing simulator `smoke` suite and three agents remain unchanged.
 
 The worker gives `windows-host` jobs a 10-second HTTP deadline and a longer
@@ -109,3 +116,9 @@ lease; simulator jobs keep their 3-second deadline. This is a bounded timeout,
 not a long-running stress test. A direct agent request or restart can still
 lose its in-memory idempotency cache. Restrict both API and agent ports to the
 trusted LAN until authentication and TLS are implemented.
+
+The physical Windows laptop completed this workflow manually: registration
+and heartbeats over the LAN, worker-to-agent HTTP execution, a first-attempt
+`host-health` pass, persisted system and integrity results, readable dashboard
+rendering, and online/offline/reconnect transitions. GitHub Actions does not
+run against the laptop.

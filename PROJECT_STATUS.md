@@ -2,12 +2,12 @@
 
 ## Current state
 
-The end-to-end local MVP is implemented. PulseHunter can register three standalone
-simulated devices, reserve them for a run, dispatch concurrent jobs through
-Redis/Celery, persist results in PostgreSQL, retry transient failures, enforce
-timeouts, aggregate the run, release devices, and expose the result in REST and
-HTML views. An API-based CLI can create a run and gate a CI job on its final
-status. A separate Windows process can perform predefined checks on its host.
+The end-to-end MVP is implemented with three standalone simulators and a
+physical Windows host agent. PulseHunter reserves networked devices, dispatches
+concurrent jobs through Redis/Celery, persists results in PostgreSQL, recovers
+from transient failures, and exposes runs through REST, a dashboard, and a
+build-gating CI client. The Windows laptop workflow has been verified manually
+end to end on real hardware.
 
 Target runtime: Python 3.14. Local verification: 2026-09-24.
 
@@ -37,7 +37,8 @@ Target runtime: Python 3.14. Local verification: 2026-09-24.
 - bounded attempts and capped exponential backoff
 - persisted structured result, logs, error details, and duration
 - automatic durable-job and expired-worker-lease reconciliation
-- dashboard fleet metrics, run creation, recent runs, and job detail
+- dashboard fleet metrics, compatible-device selection, run creation, recent
+  runs, readable physical-host results, and raw technical detail
 - generated Swagger/OpenAPI at `/docs`
 - `pulsehunter-ci` run creation, polling, exit codes, per-device summaries, and
   optional caller-supplied source-commit metadata stored with each run
@@ -46,33 +47,29 @@ Target runtime: Python 3.14. Local verification: 2026-09-24.
 
 ## Verification status
 
-Verified locally on 2026-09-24:
+Verified on 2026-09-24:
 
-- Python 3.14.5 ran the host suite and Python 3.14.7 ran the Docker suite.
-- `ruff check .` passed and `ruff format --check .` confirmed all 66 files were
-  formatted.
-- Mypy passed across all 41 source files.
-- The host test run passed 46 tests and skipped only the opt-in service test.
-- The full Compose-backed test run enabled that service test and passed all 47
-  tests against PostgreSQL and Redis.
-- `docker compose config --quiet` passed. The Python 3.14 image rebuilt, the
-  complete stack was recreated, PostgreSQL, Redis, the API, and all three
-  agents reported healthy, and the worker and Beat processes remained running.
-- Alembic applied the additive run-source migration and reported no new
-  upgrade operations from the model metadata.
-- The automated mixed-behavior run completed three concurrent jobs: healthy
-  passed on attempt 1, unreliable passed on attempt 2, slow timed out on attempt
-  3, the aggregate run failed as designed, and all devices returned online.
-- The packaged CI client returned exit 0 for the healthy agent and exit 1 for
-  the slow agent's bounded timeout; both printed run and device summaries, and
-  source metadata was persisted and returned by the API.
-- The Windows host-check collector completed bounded memory and temporary-file
-  integrity tests on the development desktop. Unit tests cover the host-agent
-  HTTP contract, idempotency, suite restriction, cleanup, and timeout budget.
-  The physical laptop has **not** yet been tested end to end.
+- On a physical Windows laptop, the agent registered as `windows-host` with
+  `simulated=false`, sent heartbeats over the LAN, and accepted an HTTP job from
+  the desktop worker. Run `8f990ccc-c1c7-4ad2-9c63-4af627e19758` passed
+  `host-health` on attempt 1. Real CPU, memory, storage, network, battery,
+  uptime, and system results were persisted; memory and storage integrity
+  checks passed. The dashboard rendered the saved result, and heartbeat-driven
+  online/offline/reconnect behavior was observed.
+- Locally, Python 3.14.5 passed Ruff, Ruff format (66 files), Mypy (41 source
+  files), JavaScript syntax, and 49 pytest tests; the service-only test was
+  skipped. A disposable Python 3.14.7 container passed all 50 tests against
+  real PostgreSQL and Redis.
+- Compose config, image build, and startup passed without deleting volumes.
+  PostgreSQL, Redis, API, worker, Beat, and three simulators were healthy.
+  Alembic reported no schema drift; repeated suite seeding succeeded.
+- The Docker simulator E2E run passed healthy on attempt 1 and unreliable on
+  attempt 2; slow timed out on attempt 3, so the aggregate failed as designed.
+  The CI client returned exit 0 for healthy and exit 1 for slow. `/health`,
+  Swagger/OpenAPI, the dashboard, and the saved physical run-detail page loaded.
 
-The published CI-client revision passed both GitHub Actions jobs. This Windows
-host-agent revision is uncommitted and has not run remotely.
+GitHub Actions covers automated tests and Docker simulator flows; it does not
+physically exercise the Windows laptop.
 
 ## Known issues and limitations
 
@@ -81,8 +78,7 @@ host-agent revision is uncommitted and has not run remotely.
 - Agent execution idempotency is in memory and is lost on restart.
 - No cancellation, priority queue, capability matching, artifact storage,
   streaming logs, metrics dashboards, or cloud deployment.
-- Physical-laptop registration, LAN reachability, and job execution await
-  manual verification; CI tests the agent contract, not that laptop.
+- CI tests the host-agent contract, not the physical laptop.
 - The slow simulator intentionally makes an all-device run fail with a timeout.
 - Exactly one Celery Beat process should run.
 
@@ -102,8 +98,8 @@ docker compose run --rm migrate alembic check
 docker compose run --rm migrate python -m pulsehunter.db.seed
 ```
 
-## Next recommended milestone
+## Future work
 
-Run the documented physical-laptop E2E check and inspect its persisted result
-before claiming laptop validation. Authentication and capability-aware
-scheduling remain separate future milestones.
+Authentication, API-level capability-aware scheduling, and additional agent
+integrations such as Raspberry Pi or microcontroller gateways are not yet
+implemented.

@@ -23,13 +23,13 @@ asynchronously, survive temporary failures, and preserve results for engineers.
 
 - registration, heartbeats, online/offline/busy state, and exclusive reservation
 - healthy, slow, and unreliable standalone device agents
-- optional Windows host agent with predefined real machine checks
+- Windows host agent with predefined checks, verified on a physical laptop
 - PostgreSQL-backed test suites, runs, jobs, results, logs, errors, and timings
 - Redis/Celery task delivery with four concurrent worker slots
 - bounded retries with exponential backoff, HTTP timeouts, and worker leases
 - a periodic reconciler that recovers durable queued work and expired leases
 - run-status aggregation and correct device release after terminal jobs
-- REST/OpenAPI endpoints plus a server-rendered dashboard
+- REST/OpenAPI endpoints plus a dashboard for compatible device selection and readable results
 - API-based CI client that gates a build on the final device-validation result
 - Alembic migrations, deterministic seeding, automated tests, and GitHub Actions
 
@@ -90,10 +90,9 @@ local database and Redis volume.
 
 ## Demo workflow
 
-The easiest route is the **Run on all available devices** button on the
-dashboard. The UI also permits selecting one or more available devices. Open a
-created run to inspect per-device attempts, logs, duration, errors, and final
-status.
+The dashboard offers all compatible online devices or an explicit selection
+for the chosen suite. Open a created run to inspect per-device attempts, logs,
+duration, errors, and final status.
 
 From PowerShell, the all-device API flow is:
 
@@ -149,13 +148,16 @@ the public internet.
 
 ## Physical Windows host agent
 
-An optional agent can run directly on a trusted-LAN Windows laptop and perform
+An optional agent runs directly on a trusted-LAN Windows laptop and performs
 real, bounded system and integrity checks. It registers as `windows-host` with
-`simulated=false`; the three Docker simulators remain available. Use the
-dedicated `host-health` suite with an explicitly selected laptop device. See
-[Windows host agent setup](docs/windows-host-agent.md) for exact Python,
-firewall, startup, and manual validation commands. The physical-laptop E2E
-remains a manual check, not a GitHub Actions claim.
+`simulated=false`; the three Docker simulators remain available. On the
+dashboard, choose `host-health`, select the online physical host, and open the
+run to see readable system and integrity results. Registration, LAN execution,
+result persistence, dashboard rendering, and offline/reconnect behavior were
+manually verified on a physical Windows laptop; the validation passed on its
+first attempt. GitHub Actions tests the agent contract and Docker simulators,
+not the physical laptop. See [Windows host agent setup](docs/windows-host-agent.md)
+for Python, firewall, startup, and verification steps.
 
 ## API
 
@@ -234,8 +236,8 @@ docker compose run --rm migrate python -m pulsehunter.db.seed
   contacted. If publication fails, Beat republishes the still-queued job.
 - **One codebase, distinct processes:** API, worker, scheduler, and agents reuse
   one typed Python package but have separate runtime responsibilities.
-- **HTTP device boundary:** a simulator can later be replaced by a Raspberry Pi
-  or microcontroller gateway without coupling device logic to Celery.
+- **HTTP device boundary:** new agent types can use the same contract without
+  coupling device logic to Celery.
 
 ## Current limitations
 
@@ -261,6 +263,7 @@ These are planned directions, not implemented features:
 - capability-aware scheduling, priorities, and cancellation
 - artifact retention, log streaming, metrics, and tracing
 - durable agent-side idempotency and additional physical-device integrations
+- Raspberry Pi and microcontroller gateways
 
 ## Documentation and security
 
